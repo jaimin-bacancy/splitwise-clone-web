@@ -10,17 +10,15 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useMutation } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+import React, { useContext, useEffect, useState } from "react";
+import { ApiConst, AppConst } from "../constants";
+import { AuthContext } from "../context/AuthContext";
 
 const Home = () => {
-  const [groups, setGroups] = useState([
-    { name: "Group 1", amount: 100, isOwed: true },
-    { name: "Group 2", amount: 200, isOwed: false },
-    { name: "Group 3", amount: 300, isOwed: true },
-    { name: "Group 4", amount: 400, isOwed: false },
-  ]);
+  const [groups, setGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isJoinGroupModalOpen, setIsJoinGroupModalOpen] = useState(false);
@@ -30,10 +28,120 @@ const Home = () => {
   const [popupVisible, setPopupVisible] = useState(null);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [joinGroupId, setJoinGroupId] = useState(null);
+  // TODO: pagination feature is pending
+  const [page, setPage] = useState(1);
+
+  const { token } = useContext(AuthContext);
 
   const location = useLocation();
   const navigate = useNavigate();
 
+  const callGetGroupsApi = async (search = "", page = 1) => {
+    const URL = `${AppConst.BASE_URL}${ApiConst.SEARCH_GROUP}?search=${search}&page=${page}`;
+    const response = await axios.get(URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  };
+
+  const mutation = useMutation({
+    mutationFn: ({ search, page }) => callGetGroupsApi(search, page),
+    onSuccess: (data) => {
+      setGroups([...(data?.groups ?? [])]);
+    },
+    onError: (error, variables, context) => {
+      // An error happened!
+      alert(error.message);
+    },
+  });
+
+  const callUpdateGroupApi = async (groupId = "", name = "") => {
+    const URL = `${AppConst.BASE_URL}${ApiConst.UPDATE_GROUP}/${groupId}`;
+    const response = await axios.put(
+      URL,
+      {
+        name,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  };
+
+  const updateGroupMutation = useMutation({
+    mutationFn: ({ groupId, name }) => callUpdateGroupApi(groupId, name),
+    onSuccess: (data, { groupId, name }) => {
+      setGroups(
+        groups.map((item) =>
+          item._id === groupId ? { ...item, name: name } : item
+        )
+      );
+    },
+    onError: (error, variables, context) => {
+      // An error happened!
+      alert(error.message);
+    },
+  });
+
+  const callDeleteGroupApi = async (groupId = "") => {
+    const URL = `${AppConst.BASE_URL}${ApiConst.DELETE_GROUP}/${groupId}`;
+    const response = await axios.delete(URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  };
+
+  const deleteGroupMutation = useMutation({
+    mutationFn: ({ groupId }) => callDeleteGroupApi(groupId),
+    onSuccess: (data, { groupId, name }) => {
+      setGroups(groups.filter((group) => group._id !== groupId));
+    },
+    onError: (error, variables, context) => {
+      // An error happened!
+      alert(error.message);
+    },
+  });
+
+  const callCreateGroupApi = async (name = "") => {
+    const URL = `${AppConst.BASE_URL}${ApiConst.CREATE_GROUP}`;
+    const response = await axios.post(
+      URL,
+      {
+        name,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  };
+
+  const createGroupMutation = useMutation({
+    mutationFn: ({ name }) => callCreateGroupApi(name),
+    onSuccess: (data) => {
+      setGroups([...groups, { ...data.group }]);
+    },
+    onError: (error, variables, context) => {
+      // An error happened!
+      alert(error.message);
+    },
+  });
+
+  useEffect(() => {
+    mutation.mutate({ search: searchTerm, page });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, page]);
+
+  // TODO: need to call api for accept/decline group join request.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const join = params.get("join");
@@ -48,20 +156,15 @@ const Home = () => {
   };
 
   const handleCreateGroup = () => {
-    setGroups([...groups, { name: newGroupName, amount: 0, isOwed: false }]);
+    createGroupMutation.mutate({ name: newGroupName });
     setNewGroupName("");
     setIsCreateGroupModalOpen(false);
   };
 
   const handleUpdateGroup = () => {
     if (editGroupIndex > -1) {
-      setGroups(
-        groups.map((_, index) =>
-          index === editGroupIndex
-            ? { ...groups[index], name: newGroupName }
-            : _
-        )
-      );
+      const groupId = groups[editGroupIndex]._id;
+      updateGroupMutation.mutate({ groupId, name: newGroupName });
     }
 
     setNewGroupName("");
@@ -74,41 +177,42 @@ const Home = () => {
     setIsJoinGroupModalOpen(false);
   };
 
-  const filteredGroups = groups.filter((group) =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const generateUniqueLink = () => {
-    return `http://localhost:3000/home?join=${uuidv4()}`;
+  const generateUniqueLink = (uniqueCode) => {
+    return `${AppConst.BASE_URL}?join=${uniqueCode}`;
   };
 
-  const handleCopyLink = (link) => {
-    navigator.clipboard.writeText(link).then(() => {
-      setLinkCopied(true);
-      setPopupVisible(null);
-      setTimeout(() => {
-        setLinkCopied(false);
-      }, 2000); // Show message for 2 seconds
-    });
+  const handleCopyLink = (groupId) => {
+    const index = groups.findIndex((group) => group._id === groupId);
+    if (index > -1) {
+      navigator.clipboard
+        .writeText(generateUniqueLink(groups[index].uniqueCode))
+        .then(() => {
+          setLinkCopied(true);
+          setPopupVisible(null);
+          setTimeout(() => {
+            setLinkCopied(false);
+          }, 2000); // Show message for 2 seconds
+        });
+    }
   };
 
-  const handleDeleteGroup = (groupName) => {
-    setGroups(groups.filter((group) => group.name !== groupName));
+  const handleDeleteGroup = (groupId) => {
+    deleteGroupMutation.mutate({ groupId });
     setPopupVisible(null);
   };
 
-  const handleEditGroup = (groupName) => {
-    const index = groups.findIndex((group) => group.name === groupName);
+  const handleEditGroup = (groupId) => {
+    const index = groups.findIndex((group) => group._id === groupId);
     if (index > -1) {
       setEditGroupIndex(index);
+      setNewGroupName(groups[index].name);
     }
 
-    setNewGroupName(groupName);
     setIsCreateGroupModalOpen(true);
     setPopupVisible(null);
   };
 
-  const handleEllipsisClick = (event, groupName) => {
+  const handleEllipsisClick = (event, groupId) => {
     const rect = event.target.getBoundingClientRect();
     const top = rect.top + window.scrollY + rect.height;
     const left = rect.left + window.scrollX;
@@ -118,7 +222,7 @@ const Home = () => {
       top,
       left: isOverflowingRight ? window.innerWidth - 160 - 16 : left,
     });
-    setPopupVisible(popupVisible === groupName ? null : groupName);
+    setPopupVisible(popupVisible === groupId ? null : groupId);
   };
 
   const handleAddExpenseButtonPress = () => {
@@ -170,24 +274,24 @@ const Home = () => {
 
       {/* Groups List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredGroups.map((group) => (
+        {groups?.map((group) => (
           <div key={group.name} className="bg-white p-4 rounded-lg shadow">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-xl font-bold truncate me-4">{group.name}</h3>
               <div
                 className="flex items-center space-x-2 p-2 cursor-pointer"
-                onClick={(event) => handleEllipsisClick(event, group.name)}
+                onClick={(event) => handleEllipsisClick(event, group._id)}
               >
                 <FontAwesomeIcon icon={faEllipsisV} />
               </div>
             </div>
-            {group.isOwed ? (
+            {group?.isOwed ? (
               <p className="text-success font-bold">
                 You are owed ₹{group?.amount}
               </p>
-            ) : (
+            ) : group?.amount ? (
               <p className="text-error font-bold">You owe ₹{group?.amount}</p>
-            )}
+            ) : null}
           </div>
         ))}
       </div>
@@ -281,7 +385,7 @@ const Home = () => {
           </button>
           <button
             className="w-full text-left px-2 py-1 hover:bg-gray-100 flex items-center"
-            onClick={() => handleCopyLink(generateUniqueLink())}
+            onClick={() => handleCopyLink(popupVisible)}
           >
             <FontAwesomeIcon icon={faLink} className="mr-2" /> Copy Link
           </button>

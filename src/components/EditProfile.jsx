@@ -14,7 +14,7 @@ const EditProfile = () => {
 
   const queryClient = useQueryClient();
 
-  const { data } = useQuery({
+  const { data, error } = useQuery({
     queryKey: ["user"],
     queryFn: () => callGetUserApi(),
   });
@@ -86,6 +86,11 @@ const EditProfile = () => {
   });
 
   useEffect(() => {
+    if (error?.status == "401") {
+      alert(error.message);
+      logout();
+    }
+
     if (data?.user?.name) {
       setName(data.user.name);
     }
