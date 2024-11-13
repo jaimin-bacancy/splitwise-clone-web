@@ -39,7 +39,15 @@ const Register = () => {
     },
     onError: (error, variables, context) => {
       // An error happened!
-      alert(error.message);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     },
   });
 

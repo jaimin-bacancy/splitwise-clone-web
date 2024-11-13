@@ -6,6 +6,7 @@ export const ApiConst = {
   SEARCH_GROUP: "/api/group/search",
   UPDATE_GROUP: "/api/group/update",
   CREATE_GROUP: "/api/group/create",
+  JOIN_GROUP: "/api/group/join",
   DELETE_GROUP: "/api/group/delete",
   LOGOUT: "/api/auth/logout",
 };

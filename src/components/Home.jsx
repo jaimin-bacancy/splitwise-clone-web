@@ -53,7 +53,15 @@ const Home = () => {
     },
     onError: (error, variables, context) => {
       // An error happened!
-      alert(error.message);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     },
   });
 
@@ -84,7 +92,15 @@ const Home = () => {
     },
     onError: (error, variables, context) => {
       // An error happened!
-      alert(error.message);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     },
   });
 
@@ -105,7 +121,15 @@ const Home = () => {
     },
     onError: (error, variables, context) => {
       // An error happened!
-      alert(error.message);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     },
   });
 
@@ -132,7 +156,49 @@ const Home = () => {
     },
     onError: (error, variables, context) => {
       // An error happened!
-      alert(error.message);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
+    },
+  });
+
+  const callJoinGroupApi = async (uniqueCode = "") => {
+    const URL = `${AppConst.BASE_URL}${ApiConst.JOIN_GROUP}/${uniqueCode}`;
+    const response = await axios.put(
+      URL,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  };
+
+  const joinGroupMutation = useMutation({
+    mutationFn: ({ uniqueCode }) => callJoinGroupApi(uniqueCode),
+    onSuccess: (data) => {
+      navigate({ to: "/", replace: true });
+      setGroups([...groups, { ...data.group }]);
+    },
+    onError: (error, variables, context) => {
+      // An error happened!
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        alert(error.response.data.message);
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     },
   });
 
@@ -173,7 +239,7 @@ const Home = () => {
   };
 
   const handleJoinGroup = () => {
-    // Logic for joining group
+    joinGroupMutation.mutate({ uniqueCode: joinGroupId });
     setIsJoinGroupModalOpen(false);
   };
 
@@ -275,7 +341,7 @@ const Home = () => {
       {/* Groups List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {groups?.map((group) => (
-          <div key={group.name} className="bg-white p-4 rounded-lg shadow">
+          <div key={group._id} className="bg-white p-4 rounded-lg shadow">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-xl font-bold truncate me-4">{group.name}</h3>
               <div
@@ -361,7 +427,10 @@ const Home = () => {
                 Accept
               </button>
               <button
-                onClick={() => setIsJoinGroupModalOpen(false)}
+                onClick={() => {
+                  navigate({ to: "/", replace: true });
+                  setIsJoinGroupModalOpen(false);
+                }}
                 className="w-full bg-gray-500 text-white p-2 rounded"
               >
                 Decline
