@@ -24,7 +24,7 @@ const OTPVerification = () => {
     mutationFn: callVerifyOtpApi,
     onSuccess: (data) => {
       setOtp("");
-      login(data.token);
+      login(data.token, data?.user);
 
       setTimeout(() => {
         if (data?.user?.name !== "") {

@@ -8,5 +8,6 @@ export const ApiConst = {
   CREATE_GROUP: "/api/group/create",
   JOIN_GROUP: "/api/group/join",
   DELETE_GROUP: "/api/group/delete",
+  GROUP: "/api/group",
   LOGOUT: "/api/auth/logout",
 };

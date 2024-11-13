@@ -279,6 +279,9 @@ const Home = () => {
   };
 
   const handleEllipsisClick = (event, groupId) => {
+    // Prevent the click event from propagating to the parent elements
+    event.stopPropagation();
+
     const rect = event.target.getBoundingClientRect();
     const top = rect.top + window.scrollY + rect.height;
     const left = rect.left + window.scrollX;
@@ -304,6 +307,15 @@ const Home = () => {
   const handleProfileButtonPress = () => {
     // Logic for profile
     navigate({ to: "/edit-profile" });
+  };
+
+  const handleGroupPress = (groupId) => {
+    navigate({
+      to: "$groupId/users",
+      params: {
+        groupId: groupId,
+      },
+    });
   };
 
   return (
@@ -341,7 +353,11 @@ const Home = () => {
       {/* Groups List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {groups?.map((group) => (
-          <div key={group._id} className="bg-white p-4 rounded-lg shadow">
+          <div
+            key={group._id}
+            className="bg-white p-4 rounded-lg shadow cursor-pointer"
+            onClick={() => handleGroupPress(group._id)}
+          >
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-xl font-bold truncate me-4">{group.name}</h3>
               <div

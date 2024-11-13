@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Activity from "./components/Activity";
 import AddExpense from "./components/AddExpense";
 import EditProfile from "./components/EditProfile";
+import GroupUsers from "./components/GroupUsers";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import OTPVerification from "./components/OTPVerification";
@@ -27,68 +28,72 @@ const rootRoute = createRootRoute({
   ),
 });
 
-const indexRoute = createRoute({
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "login",
-  component: function Index() {
-    return <Login />;
-  },
+  component: () => <Login />,
 });
 
 const otpVerificationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "otp-verification/$tempToken",
-  component: function Index() {
-    return <OTPVerification />;
-  },
+  component: () => <OTPVerification />,
 });
 
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "register",
-  component: function Index() {
-    return <Register />;
-  },
+  component: () => <Register />,
 });
 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: function Index() {
-    return (
-      <ProtectedRoute>
-        <Home />
-      </ProtectedRoute>
-    );
-  },
+  component: () => (
+    <ProtectedRoute>
+      <Home />
+    </ProtectedRoute>
+  ),
 });
 
 const editProfileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "edit-profile",
-  component: function Index() {
-    return (
-      <ProtectedRoute>
-        <EditProfile />
-      </ProtectedRoute>
-    );
-  },
+  component: () => (
+    <ProtectedRoute>
+      <EditProfile />
+    </ProtectedRoute>
+  ),
 });
 
 const addExpenseRoute = createRoute({
-  getParentRoute: () => homeRoute,
+  getParentRoute: () => rootRoute,
   path: "add-expense",
-  component: function Index() {
-    return <AddExpense />;
-  },
+  component: () => (
+    <ProtectedRoute>
+      <AddExpense />
+    </ProtectedRoute>
+  ),
 });
 
 const activityRoute = createRoute({
-  getParentRoute: () => homeRoute,
+  getParentRoute: () => rootRoute,
   path: "activity",
-  component: function Index() {
-    return <Activity />;
-  },
+  component: () => (
+    <ProtectedRoute>
+      <Activity />
+    </ProtectedRoute>
+  ),
+});
+
+const groupUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "$groupId/users",
+  component: () => (
+    <ProtectedRoute>
+      <GroupUsers />
+    </ProtectedRoute>
+  ),
 });
 
 const ProtectedRoute = ({ children }) => {
@@ -102,13 +107,14 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const routeTree = rootRoute.addChildren([
-  indexRoute,
+  loginRoute,
   otpVerificationRoute,
   registerRoute,
   homeRoute,
   editProfileRoute,
   addExpenseRoute,
   activityRoute,
+  groupUsersRoute,
 ]);
 
 const router = createRouter({ routeTree });
