@@ -1,5 +1,6 @@
 import {
-  faPlus,
+  faLink,
+  faReceipt,
   faRemove,
   faSearch,
   faTrash,
@@ -18,12 +19,12 @@ const GroupUsers = () => {
 
   const { groupId } = useParams({ strict: false });
 
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
   const callGetGroupDetailsApi = async () => {
-    const URL = `${AppConst.BASE_URL}${ApiConst.GROUP}/${groupId}/detail`;
+    const URL = `${AppConst.BASE_URL}${ApiConst.GROUP}/detail/${groupId}`;
     const response = await axios.get(URL, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -38,7 +39,7 @@ const GroupUsers = () => {
   });
 
   const callRemoveUserApi = async (userId = "") => {
-    const URL = `${AppConst.BASE_URL}${ApiConst.GROUP}/${groupId}/user/${userId}`;
+    const URL = `${AppConst.BASE_URL}${ApiConst.DELETE_GROUP}/${groupId}/user/${userId}`;
     const response = await axios.delete(URL, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -80,6 +81,21 @@ const GroupUsers = () => {
 
   const handleDeleteButtonPress = () => {
     deleteGroupMutation.mutate();
+  };
+
+  const generateUniqueLink = (uniqueCode) => {
+    return `${AppConst.BASE_URL}?join=${uniqueCode}`;
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard
+      .writeText(generateUniqueLink(data?.group?.uniqueCode))
+      .then(() => {
+        setLinkCopied(true);
+        setTimeout(() => {
+          setLinkCopied(false);
+        }, 2000); // Show message for 2 seconds
+      });
   };
 
   const callDeleteGroupApi = async () => {
@@ -132,6 +148,16 @@ const GroupUsers = () => {
           </div>
           <div
             className="flex items-center space-x-2 p-2 cursor-pointer"
+            onClick={handleCopyLink}
+          >
+            <FontAwesomeIcon
+              icon={faLink}
+              size="lg"
+              className="hover:text-accent text-green-500"
+            />
+          </div>
+          <div
+            className="flex items-center space-x-2 p-2 cursor-pointer"
             onClick={handleDeleteButtonPress}
           >
             <FontAwesomeIcon
@@ -147,25 +173,32 @@ const GroupUsers = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data?.group?.users
           ?.filter((item) => item.name.includes(searchTerm))
-          .map((user) => (
-            <div key={user._id} className="bg-white p-4 rounded-lg shadow">
+          .map((userItem) => (
+            <div key={userItem._id} className="bg-white p-4 rounded-lg shadow">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-bold truncate me-4">{user.name}</h3>
-                {user?._id == data?.group?.createdBy && (
-                  <div
-                    className="flex items-center space-x-2 p-2 cursor-pointer"
-                    onClick={(event) => handleDeleteUserClick(event, user._id)}
-                  >
-                    <FontAwesomeIcon icon={faRemove} />
-                  </div>
-                )}
+                <h3 className="text-xl font-bold truncate me-4">
+                  {userItem.name}
+                </h3>
+                {userItem?._id != user?._id &&
+                  user?._id === data?.group?.createdBy && (
+                    <div
+                      className="flex items-center space-x-2 p-2 cursor-pointer"
+                      onClick={(event) =>
+                        handleDeleteUserClick(event, userItem._id)
+                      }
+                    >
+                      <FontAwesomeIcon icon={faRemove} />
+                    </div>
+                  )}
               </div>
-              {user?.isOwed ? (
+              {userItem?.isOwed ? (
                 <p className="text-success font-bold">
-                  You are owed ₹{user?.amount}
+                  You are owed ₹{userItem?.amount}
                 </p>
-              ) : user?.amount ? (
-                <p className="text-error font-bold">You owe ₹{user?.amount}</p>
+              ) : userItem?.amount ? (
+                <p className="text-error font-bold">
+                  You owe ₹{userItem?.amount}
+                </p>
               ) : null}
             </div>
           ))}
@@ -174,10 +207,11 @@ const GroupUsers = () => {
       {/* Floating Action Buttons */}
       <div className="fixed bottom-4 right-4 flex flex-col space-y-4">
         <button
-          className="bg-primary text-white p-4 rounded-full shadow-lg flex items-center justify-center"
+          className="bg-primary text-white py-4 px-6 rounded-full shadow-lg flex items-center justify-center"
           onClick={handleAddExpenseButtonPress}
         >
-          <FontAwesomeIcon icon={faPlus} size="lg" />
+          <FontAwesomeIcon icon={faReceipt} size="lg" />
+          <p className="text-white text-base font-bold ms-2">Add Expense</p>
         </button>
       </div>
 

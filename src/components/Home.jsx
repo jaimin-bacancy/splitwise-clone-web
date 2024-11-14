@@ -2,7 +2,7 @@ import {
   faEdit,
   faEllipsisV,
   faLink,
-  faPlus,
+  faReceipt,
   faSearch,
   faTrash,
   faUser,
@@ -295,7 +295,7 @@ const Home = () => {
   };
 
   const handleAddExpenseButtonPress = () => {
-    // Logic for adding expense
+    navigate({ to: "add-expense" });
   };
 
   const handleCreateGroupButtonPress = () => {
@@ -381,16 +381,18 @@ const Home = () => {
       {/* Floating Action Buttons */}
       <div className="fixed bottom-4 right-4 flex flex-col space-y-4">
         <button
-          className="bg-primary text-white p-4 rounded-full shadow-lg flex items-center justify-center"
+          className="bg-primary text-white py-4 px-6 rounded-full shadow-lg flex items-center justify-center"
           onClick={handleAddExpenseButtonPress}
         >
-          <FontAwesomeIcon icon={faPlus} size="lg" />
+          <FontAwesomeIcon icon={faReceipt} size="lg" />
+          <p className="text-white text-base font-bold ms-2">Add Expense</p>
         </button>
         <button
-          className="bg-secondary text-white p-4 rounded-full shadow-lg flex items-center justify-center"
+          className="bg-secondary text-white py-4 px-6 rounded-full shadow-lg flex items-center justify-center"
           onClick={handleCreateGroupButtonPress}
         >
           <FontAwesomeIcon icon={faUserPlus} size="lg" />
+          <p className="text-white text-base font-bold ms-2">Create Group</p>
         </button>
       </div>
 
